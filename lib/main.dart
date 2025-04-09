@@ -14,7 +14,11 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [BlocProvider<CounterBloc>(create: (_) => CounterBloc())],
-      child: MaterialApp(title: 'Bloc App', home: CounterPage()),
+      child: MaterialApp(
+        title: 'Bloc App',
+        home: CounterPage(),
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }
