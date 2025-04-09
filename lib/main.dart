@@ -19,6 +19,49 @@ class MainApp extends StatelessWidget {
   }
 }
 
+class Counter2 extends StatelessWidget {
+  const Counter2({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<CounterBloc, CounterState>(
+      listener: (context, state) {
+        // Side effect when the count reaches a certain value
+        if (state.count == 10) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Count reached 10!')));
+        }
+      },
+      builder: (context, state) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Count2: ${state.count}',
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                context.read<CounterBloc>().add(Increment());
+              },
+              child: const Text('Increment (Counter2)'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                context.read<CounterBloc>().add(Decrement());
+              },
+              child: const Text('Decrement (Counter2)'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class CounterPage extends StatelessWidget {
   const CounterPage({super.key});
 
@@ -34,7 +77,10 @@ class CounterPage extends StatelessWidget {
           BlocSelector<CounterBloc, CounterState, int>(
             selector: (state) => state.count,
             builder: (context, count) {
-              return Text('Count: $count');
+              return Text(
+                'Count: $count',
+                style: const TextStyle(fontSize: 24),
+              );
             },
           ),
           BlocListener<CounterBloc, CounterState>(
@@ -58,6 +104,7 @@ class CounterPage extends StatelessWidget {
               ],
             ),
           ),
+          Counter2(),
         ],
       ),
       floatingActionButton: Row(
