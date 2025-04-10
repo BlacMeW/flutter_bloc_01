@@ -18,10 +18,9 @@ class MainApp extends StatelessWidget {
         BlocProvider(create: (_) => CounterBloc()),
         BlocProvider(create: (_) => ApiBloc()),
       ],
-      child: MaterialApp(
-        title: 'Bloc App',
+      child: const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: const CounterPage(),
+        home: CounterPage(),
       ),
     );
   }
@@ -33,139 +32,80 @@ class CounterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final counterBloc = context.read<CounterBloc>();
-    final apiBloc = context.read<ApiBloc>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bloc Counter')),
-      body: Padding(
+      appBar: AppBar(title: const Text('Bloc Counter & API Fetch')),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// BlocSelector
-            BlocSelector<CounterBloc, CounterState, int>(
-              selector: (state) => state.count,
-              builder:
-                  (context, count) => Text(
-                    'Count: $count',
-                    style: const TextStyle(fontSize: 24),
-                  ),
-            ),
-
-            /// BlocBuilder (Regular)
+            /// Counter display
             BlocBuilder<CounterBloc, CounterState>(
               builder:
                   (context, state) => Text(
-                    'Count (BlocBuilder): ${state.count}',
+                    'Counter: ${state.count}',
                     style: const TextStyle(fontSize: 24),
                   ),
-            ),
-
-            /// BlocBuilder (Conditional)
-            BlocBuilder<CounterBloc, CounterState>(
-              buildWhen: (previous, current) => previous.count != current.count,
-              builder:
-                  (context, state) => Text(
-                    'Updated Count: ${state.count}',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: Colors.blueAccent,
-                    ),
-                  ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// BlocListener for special count milestones
-            BlocListener<CounterBloc, CounterState>(
-              listenWhen: (previous, current) => current.count == 10,
-              listener: (context, state) {
-                showDialog(
-                  context: context,
-                  builder:
-                      (_) => const AlertDialog(
-                        title: Text("🎉 Count reached 10!"),
-                      ),
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => counterBloc.add(Increment()),
-                    child: const Text('Increment'),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: () => counterBloc.add(Decrement()),
-                    child: const Text('Decrement'),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// Counter2 using BlocConsumer
-            const Counter2(),
-
-            const SizedBox(height: 20),
-
-            /// API Bloc Usage - Fetch Button & Result
-            ElevatedButton.icon(
-              onPressed: () {
-                apiBloc.add(
-                  FetchData(
-                    url: 'https://jsonplaceholder.typicode.com/posts/1',
-                    method: 'GET',
-                  ),
-                );
-              },
-              icon: const Icon(Icons.download),
-              label: const Text('Fetch API Data'),
             ),
 
             const SizedBox(height: 10),
 
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () => counterBloc.add(Increment()),
+                  child: const Text('Increment'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () => counterBloc.add(Decrement()),
+                  child: const Text('Decrement'),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+            const Counter2(),
+
+            const Divider(height: 40),
+            const Text(
+              '🔎 API Fetch Section',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            const ApiInputWidget(),
+
+            const SizedBox(height: 20),
+
+            /// API Result display
             BlocBuilder<ApiBloc, ApiState>(
               builder: (context, state) {
                 if (state.loading) {
-                  return const CircularProgressIndicator();
-                }
-                if (state.error.isNotEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state.error.isNotEmpty) {
                   return Text(
                     '❌ Error: ${state.error}',
                     style: const TextStyle(color: Colors.red),
                   );
+                } else if (state.data.isNotEmpty) {
+                  return Text(
+                    '✅ Response:\n${state.data}',
+                    style: const TextStyle(fontSize: 14),
+                  );
+                } else {
+                  return const Text('No response yet.');
                 }
-                return Text(
-                  state.data.isNotEmpty ? state.data : 'No API data yet',
-                  style: const TextStyle(fontSize: 14),
-                );
               },
             ),
           ],
         ),
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'add',
-            onPressed: () => counterBloc.add(Increment()),
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(width: 10),
-          FloatingActionButton(
-            heroTag: 'remove',
-            onPressed: () => counterBloc.add(Decrement()),
-            child: const Icon(Icons.remove),
-          ),
-        ],
-      ),
     );
   }
 }
 
+/// Counter2 with BlocConsumer
 class Counter2 extends StatelessWidget {
   const Counter2({super.key});
 
@@ -177,32 +117,92 @@ class Counter2 extends StatelessWidget {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('🎯 Count reached 10!')));
-        } else if (state.count == 20) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('🔥 Count reached 20!')));
         }
       },
-      builder: (context, state) {
-        return Column(
-          children: [
-            Text(
-              'Counter2 Value: ${state.count}',
-              style: const TextStyle(fontSize: 22),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () => context.read<CounterBloc>().add(Increment()),
-              child: const Text('Increment (Counter2)'),
-            ),
-            const SizedBox(height: 5),
-            ElevatedButton(
-              onPressed: () => context.read<CounterBloc>().add(Decrement()),
-              child: const Text('Decrement (Counter2)'),
-            ),
-          ],
-        );
-      },
+      builder:
+          (context, state) => Column(
+            children: [
+              Text(
+                'Counter2: ${state.count}',
+                style: const TextStyle(fontSize: 20),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () => context.read<CounterBloc>().add(Increment()),
+                child: const Text('Increment (Counter2)'),
+              ),
+            ],
+          ),
     );
+  }
+}
+
+/// API Input Widget
+class ApiInputWidget extends StatefulWidget {
+  const ApiInputWidget({super.key});
+
+  @override
+  State<ApiInputWidget> createState() => _ApiInputWidgetState();
+}
+
+class _ApiInputWidgetState extends State<ApiInputWidget> {
+  final TextEditingController _urlController = TextEditingController();
+  String _selectedMethod = 'GET';
+  final List<String> _methods = ['GET', 'POST', 'PUT', 'DELETE'];
+
+  @override
+  Widget build(BuildContext context) {
+    final apiBloc = context.read<ApiBloc>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("API URL:"),
+        TextField(
+          controller: _urlController,
+          decoration: const InputDecoration(
+            hintText: 'Enter API URL...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text("HTTP Method:"),
+        DropdownButton<String>(
+          value: _selectedMethod,
+          items:
+              _methods
+                  .map(
+                    (method) =>
+                        DropdownMenuItem(value: method, child: Text(method)),
+                  )
+                  .toList(),
+          onChanged: (value) {
+            if (value != null) {
+              setState(() => _selectedMethod = value);
+            }
+          },
+        ),
+        const SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: () {
+            final url = _urlController.text.trim();
+            if (url.isNotEmpty) {
+              apiBloc.add(FetchData(url: url, method: _selectedMethod));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Please enter a valid URL')),
+              );
+            }
+          },
+          child: const Text('Fetch Data'),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
   }
 }
