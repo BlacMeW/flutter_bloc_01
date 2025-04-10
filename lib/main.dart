@@ -87,6 +87,23 @@ class CounterPage extends StatelessWidget {
               );
             },
           ),
+          BlocBuilder<CounterBloc, CounterState>(
+            builder: (context, state) {
+              return Text(
+                'Count (BlockBuilder): ${state.count}',
+                style: const TextStyle(fontSize: 24),
+              );
+            },
+          ),
+          BlocBuilder<CounterBloc, CounterState>(
+            buildWhen: (previous, current) => previous.count != current.count,
+            builder: (context, state) {
+              return Text(
+                'Count (BlockBuilder): ${state.count}',
+                style: const TextStyle(fontSize: 24),
+              );
+            },
+          ),
           BlocListener<CounterBloc, CounterState>(
             listenWhen: (previous, current) => current.count == 10,
             listener: (context, state) {
